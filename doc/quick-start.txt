@@ -1,0 +1,211 @@
+Vim Debugger Plug in (vdb.vim) Quick Start Guide
+
+--- Installation as a User ---
+
+To install vdb.vim without root privileges, for only the current user, place a
+copy of vdb.vim in your home directory and add the following command to your
+~/.vimrc
+
+source ~/vdb.vim
+
+You may of course place the file where ever you wish, as long as the source
+command points to it correctly. Make sure vdb.vim is readable by you.
+
+
+
+--- System Wide Installation ---
+
+To install vdb.vim as a plugin available to all the system's users, place a copy
+in /usr/share/vim/vimfiles/ftplugin. Users can then at their own discretion
+activate the plug in by adding
+
+source /usr/share/vim/vimfiles/vdb.vim
+
+To their own ~/.vimrc files
+
+
+
+--- Installing the Default Mappings ---
+
+A user can activate the default mappings (which are not designed for use over
+telnet) by adding the following command to their ~/.vimrc AFTER the vdb.vim
+source autocommand
+
+call VDBMapDefaults()
+
+--- The Basic Commands ---
+
+When sourced, vdb.vim defines the following ex commands
+
+:VDBShowConsole				Default mapping: <F2>
+
+	Opens a new window within vim to show the debugger console (i.e. the
+	actual input and output of the text based debugger process) if one is
+	not open already. Positions the cursor at the end of the buffer in this
+	window, in insert mode, allowing you to type commands and send them to
+	the debugger by pressing <CR>. There is a command line history, which
+	can be accessed by pressing up or down cursor keys. Exiting insert mode
+	by pressing escape leaves the buffer unchanged, and sends no commands to
+	the debugger. Note that while in insert mode in this window, you are not
+	free to move the cursor beyond the line being edited, i.e. insert mode
+	acts like a very simple shell line editor. This command starts a new
+	debug session if one is not already running.
+
+:VDBUntil					Default mapping: <F4>
+
+	Only has an effect when called from normal mode when the cursor is in
+	the source window. The process being debugged will continue to execute
+	until the line on which the cursor was when the command was typed is
+	reached. This command starts a new debug session if one is not already
+	running, which will execute until the line is reached.
+
+:VDBToggleBreak				Default mapping: <F5>
+
+	Toggles whether there is a breakpoint on the current source line.
+	Breakpoints can be set and cleared regardless of whether a debug session
+	is in progress. Breakpoints do NOT move with edited source, so deleting
+	or adding a line above a changes the position of the breakpoint within
+	the code for the next debug session. When a debug session is started,
+	all breakpoints are set within the debugger, and those the debugger
+	refuses to set are deleted automatically (e.g. breakpoints set on blank
+	or comment lines). Similarly attempting to set an invalid breakpoint
+	while a debug session is active results in the breakpoint being deleted
+	immediately.
+
+:VDBBreakpointCondition		Default mapping: <S-F5>
+
+	Prompts for the entry of an expression to use as a condition for the
+	breakpoint on the current source line. If the breakpoint has a condition
+	already associated with it, the condition can be modified simply by
+	reentering a condition, or cleared by entering an empty condition.
+
+:VDBAddWatch				Default mapping: <F6>
+
+	When called whilst the cursor is in the source window in normal mode,
+	prompts for an expression to watch. The expression entered will be
+	placed in the watch, which if formerly empty, will be displayed in a
+	newly opened window within vim. Otherwise it will be added to the end of
+	the watch list. The results of the evaluations of expressions in the
+	watch list are displayed each time a command is sent to the debugger,
+	either via the debugger console, or by one of the VDB* commands.
+
+:VDBMoveWatchUp				Default mapping: <S-F6>, <Up>
+
+	When called whilst the cursor is in the watch list window, moves the
+	watch on the current line up one line in the watch list order.
+
+:VDBMoveWatchDown			Default mapping: <S-F6>, <Down>
+
+	When called whilst the cursor is in the watch list window, moves the
+	watch on the current line down one line in the watch list order.
+
+:VDBDelWatch				Default mapping: <S-F6>
+
+	When called whilst the cursor is in the watch list window, removes the
+	watch on the current line from the watch list.
+
+:VDBStepInto				Default mapping: <F7>
+
+	This command only has an effect when called whilst the cursor is in the
+	source window, in normal mode. The source line to execute next is
+	stepped into, meaning it is executed, and if any function call would be
+	made the execution of that call is traced, meaning the next source line
+	to be executed could potentially be within a function called from the
+	current source line be executed. This command starts a new debug session
+	if one is not already running.
+
+:VDBStepOver				Default mapping: <F8>
+
+	This command only has an effect when called whilst the cursor is in the
+	source window, in normal mode. The source line to execute next is
+	stepped over, meaning it is executed, but the execution of function
+	calls will not be traced. This command starts a new debug session if one
+	is not already running.
+	
+:VDBContinue				Default mapping: <F9>
+
+	This command only has an effect when called whilst the cursor is in the
+	source window, in normal mode. Execution of the process being debugged
+	will continue until the process exits normally, or on error, or an
+	active breakpoint is encountered, whichever is soonest.This command
+	starts a new debug session if one is not already running.
+
+:VDBFinish					Default mapping: <S-F9>
+
+	This command only has an effect when called whilst the cursor is in the
+	source window, in normal mode. The process being debugged executes until
+	the current function (or stack frame, more technically speaking)
+	returns. This command starts a new debug session if one is not already
+	running.
+	
+:VDBKill					Default mapping: <F10>
+
+	This command will end the active debug session immediately, closing all
+	windows other than the source window, which will thus occupy the entire
+	terminal. Breakpoints are kept for when another session is started, as
+	are watches.
+
+:VDBReset					Default mapping: <S-F10>
+
+	This command will end the active debug session immediately, closing all
+	windows other than the source window. In addition it will allow you to
+	specify a new debug target, and new command line parameters
+
+--- Starting a Debug Session ---
+
+A debug session can be started with any one of the commands VDBShowConsole,
+VDBUntil, VDBStepInto, VDBStepOver, VDBFinish, or VDBContinue. When these
+commands start a new debug session, and that session is the first debug session
+started since vim was started, you will be prompted to enter a target to debug.
+This would be in the case of scripted languages the source file of the program
+to debug, and in the case of compiled languages, the executable file to debug.
+The default target is the name of the file being edited in the current buffer.
+Next, you are prompted to enter any command line arguments to pass to the
+program to be debugged. Enter these arguments as a string you would enter on
+your shell's command line, excluding the program name. The default is no command
+line arguments.
+
+Subsequent debug sessions will use the target and command line of the initial
+session, unless this information is changed by using the VDBReset command.
+
+--- Giving your debugged program input ---
+
+To send input to the process being debugged, simply change to the "Output"
+window, and enter insert mode. Whatever you type (well letter numbers and
+punctuation only at this point) will be sent to the process being debugged on
+it's standard input. Right now the echoing of what you type is a little screwy,
+it will be fixed ASAP. Press <Esc> to stop sending input.
+
+--- Using a differen tty for output ---
+
+You can set the vim variable "g:VDB_ptyname" to point to a named pty, e.g.
+/dev/pts/X. Opening either another terminal emulator in X or switching to
+another text console, determine the pty name by typing
+
+	$ tty
+	/dev/pts/2
+
+Send the terminal to sleep for a long time to prevent to the shell from reading
+or writing to the pty
+
+	$ sleep 1000000
+
+In the terminal where you have your source file open in vim, BEFORE starting
+VDB, execute the following command on the vim command line, change the '2' as
+appropriate.
+
+	:let g:VDB_ptyname = "/dev/pts/2"
+
+Now start vdb, and your debugged process will output to and receive input from
+the specified pty.
+
+--- Known Bugs ---
+
+1. The output "terminal" has buffering issues, such that the last character you
+typed doesn't appear when in insert mode.
+
+2. A number of keys don't yet work in insert mode when the cursor is in the
+output terminal window.
+
+3. The output terminal window is really useless at the moment. It needs much
+improvement!

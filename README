@@ -1,0 +1,7 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1703
+
+VDB will eventually provide a generic interface to any text based, line oriented, debugger, such as gdb, or pdb. Right now it only works with gdb, but eventually, it is intended to be made extensible by use of "interface configuration files" [potentially in XML, but that's probably overkill] specifying what the debugger of choice considers the commands for various actions to be. It only works on operating systems that support pty's, i.e. not windows. Currently users are able to step over/into a particular line of code, execute until the current cursor line is reached, set watches on expressions, view the output of their programs in a vim buffer, and interactively enter data into the same buffer when their program requires input. More powerful actions can be performed by using the debug console, which gives you direct access to the back-end debugger process. Type commands in here, and see their results both in text, and reflected in the various status displays within vim. You will need vim version 7.0 or higher. Actually it might work on lower versions, I haven't tested yet. For more info check out the README file that's bundled in the package.
+
+You might want to check out pygdb (vimscript #2270) if you prefer GUI debuggers, it looks very promising.
+
+If you want to contact me, simply fire off a message to vimdebugger@gmail.com.

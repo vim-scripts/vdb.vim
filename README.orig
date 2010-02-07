@@ -1,0 +1,317 @@
+vdb.vim: the Vim DeBugger plugin
+
+--- Legal Stuff ---
+
+This software, and accompanying documents are copyright (c) 2006-2010 by James
+Dominy
+
+This software may be distributed under the terms of the Gnu General Public
+License (GPL) version 2 or higher. See the file COPYING, for the license text,
+which should have been distributed with this software and documentation. If
+COPYING is not present you can write to 
+ 		Free Software Foundation, Inc.
+		59 Temple Place, Suite 330, 
+		Boston, MA  02111-1307  
+		USA
+and request a printed copy of the license.
+
+This is still alpha software, seriously, ALPHA, and has been written to serve my
+own purposes. Thus, this software is not guaranteed to do anything useful,
+helpful, or remotely similar to the specifications contained herein, nor can I
+be held responsible for any damages or losses, financial, material, emotional or
+otherwise, occurring to you when using this software. It hasn't done anything
+nasty on my machine yet ...
+
+--- Brief Description ---
+
+The idea is that you can now debug programs from within vim, without ever
+leaving the vim environment, even by going into a sub shell.
+
+This is a plugin for vim designed to integrate basic debugging features into
+Vim for any language that has a text based, line oriented, run in the console
+debugger capable of separating the debugged process' output from that of the
+debugger itself, such that the debugged process' output can be piped separately,
+and doesn't appear on the controlling tty.
+
+It's written as a single vim script with the majority of the work being done in
+python to be run by vim's python interpreter
+
+Once the plugin is loaded, a debug session can be started with one of a variety
+of commands from normal mode, and thence basic debugging steps (such as
+stepping over/into, setting/clearing (conditional) breakpoints, and
+setting/clearing watch expressions, etc...) can be performed and have the
+results displayed in your vim session, by highlighted bars for breakpoints,
+execution line, and error points, whilst other information is displayed within
+vim windows
+
+Perfect (well, at the moment, adequate) for debugging over ssh, or even telnet
+(yech!)
+
+If you need to use more commands of the underlying debugger that have not been
+implemeted as commands within vdb, simply pop up the debugger console, and type
+them in there interactively
+
+--- User Guide ---
+
+For a quick intro and getting started information see quick-start.txt, which
+also contains an overview of the VDB* commands.
+
+Note that the default key maps are normal mode mappings. All of the VDB*
+commands exepect to be called from within normal mode, so even if you set up our
+own mappings, make sure they are normal mode mappings.
+
+It is generally safe to close any unwanted windows with the exception of the
+main source window during a debug session. Also, if things do go screwy on you,
+it is generally safe to kill the current debug session, and start over. Hours of
+debugging this have made me make it very good at cleaning up after itself ;)
+
+--- Requirements --
+
+ - Vim, of course, compiled with the following options. 
+	+autocmd
+	+python
+	+statusline
+	+windows
+	+eval
+	+folding
+	+signs
+	+user_commands
+	+vertsplit
+   Below is the output of :ver as I use vim on a daily basis, and thus for
+   which I have coded this plugin
+
+ - Python (I'm using ver 2.4.3). I'm fairly certain version 2.3.x should work
+   too, but I might be wrong, lemme know if it works or doesn't on your
+   versions
+
+ - A system that supports python's pty.openpty(). One could implement a piped
+   version with subprocess/os.popen*, but the buffering issues make it
+   practically unusable. i.e. There won't be a windows version anytime soon
+
+++++ output of :ver ++++
+VIM - Vi IMproved 7.0 (2006 May 7, compiled Oct 26 2006 19:19:59)
+Included patches: 1-17
+Modified by Gentoo-7.0.17
+Compiled by sirlark@hephaestus
+Huge version without GUI.  Features included (+) or not (-):
++arabic +autocmd -balloon_eval -browse ++builtin_terms +byte_offset +cindent
+-clientserver -clipboard +cmdline_compl +cmdline_hist +cmdline_info +comments
++cryptv +cscope +cursorshape +dialog_con +diff +digraphs -dnd -ebcdic
++emacs_tags +eval +ex_extra +extra_search +farsi +file_in_path +find_in_path
++folding -footer +fork() +gettext -hangul_input +iconv +insert_expand +jumplist
++keymap +langmap +libcall +linebreak +lispindent +listcmds +localmap +menu
++mksession +modify_fname +mouse -mouseshape +mouse_dec +mouse_gpm -mouse_jsbterm
++mouse_netterm +mouse_xterm +multi_byte +multi_lang +mzscheme -netbeans_intg
+-osfiletype +path_extra +perl +postscript +printer +profile +python +quickfix
++reltime +rightleft -ruby +scrollbind +signs +smartindent -sniff +statusline
+-sun_workshop +syntax +tag_binary +tag_old_static -tag_any_white -tcl +terminfo
++termresponse +textobjects +title -toolbar +user_commands +vertsplit
++virtualedit +visual +visualextra +viminfo +vreplace +wildignore +wildmenu
++windows +writebackup -X11 -xfontset -xim -xsmp -xterm_clipboard -xterm_save
+
+system vimrc file: "/etc/vim/vimrc" user vimrc file: "$HOME/.vimrc" user exrc
+file: "$HOME/.exrc" fall-back for $VIM: "/usr/share/vim" Compilation:
+i686-pc-linux-gnu-gcc -c -I. -Iproto -DHAVE_CONFIG_H -march=pentium4m -O2 -pipe
+-I/usr/include -DMZSCHEME_COLLECTS=/usr/collects -pipe
+-Wdeclaration-after-statement -D_LARGE FILE_SOURCE -D_FILE_OFFSET_BITS=64
+-I/usr/include/gdbm -I/usr/lib/perl5/5.8.8/i686-linux/CORE
+-I/usr/include/python2.4 -pthread
+
+Linking: i686-pc-linux-gnu-gcc -rdynamic -L/usr/local/lib -o vim -lncurses -lacl
+-lgpm /usr/lib/libmzgc.a /usr/lib/libmzscheme.a -rdynamic -L/usr/local/lib
+/usr/lib/perl5/5.8.8/i686-linux/ auto/DynaLoader/DynaLoader.a
+-L/usr/lib/perl5/5.8.8/i686-linux/CORE -lperl -lutil -lc
+-L/usr/lib/python2.4/config -lpython2.4 -lpthread -lutil -lm -Xlinker
+-export-dynamic
+
+++++ end output ++++
+
+--- Caveats ---
+
+I have been testing this on my system alone, which is currently running
+Gentoo-Linux kernel-2.6.x, in xterm and standard console in vesa framebuffer
+mode. I haven't tested it on any other systems yet, however it is reported as
+working on Ubuntu 8.04 Desktop. 
+
+I fully expect there to be a lot of missing/buggy functionality relating to
+different terminals being used.
+
+I can't think of any reason why debugging a program running a GUI shouldn't
+work, but since I haven't tried yet, I really have no idea. The real catch is
+that debugged process output is captured and put into a vim buffer, which is
+a VERY limiting way to emulate a terminal as far as output is concerned. This
+means basically that ncurses/slang/ANSI escape sequences and other weird
+stuff may look very screwy or may not even work at all (more likely to not
+work at all and corrupt vim's terminal) Eventually, I might in fact try to
+emulate something approximating a proper terminal, but that's a while off,
+starting AFTER I learn all about that terminal control code stuff
+
+I work in Vim using a maximised terminal, so I have plenty of terminal real
+estate to work with. Whilst I have tried to keep the 80x25 terminals in mind
+whilst laying stuff out, there're a hell of a lot of windows, and ultimately I
+wouldn't recommend using VDB in anything less than 100x50
+
+--- Still To Do (I'm getting there, I'm getting there) ---
+ 
+ - disable automatic debugging output
+
+ - implement an external debugger interface specfication system
+
+ - sending keystrokes to the debugged process is still a little flakey,
+   especially backspace and delete...
+
+ - comment the code, put in docstrings, document etc...
+
+ - implement terminal emulation
+
+--- Change Log ---
+
+vdb-0.4.4.tar.gz	2010-02-08
+ * Aoyama Shotaro: provided a ruby interface including a hacked version of the
+   ruby debugger providing the necessaries (split output etc.)
+ * Aoyama Shotaro: fixed a typo in cpdb.py and made pdbout global
+ * Aoyama Shotaro: change the subprocess system command from os.popen4 to
+   subprocess.Popen
+ * Aoyama Shotaro: changed getsymbol value from 'print' to 'p' in the python
+   interface, because 'print' prints to the inferior tty and deosn't produce
+   something to be caught as a watch
+ * Aoyama Shotaro: add exception handling to the main vdb commands
+ * Aoyama Shotaro: added option "g:VDB_ptyname" as a vim variable. When set
+   indicates a names pty to use as inferior tty instead of opening a new vim
+   buffer to do it (obviously this means a full featured terminal, but requires
+   a separate window or console)
+ * hacked debuggers to be included in the main package hence forth
+
+vdb-0.4.3.tar.gz	2008-06-28
+ * hacked pdb.py to implement inferior-tty ala gdb. This means we finally have
+   pdb and gdb working! Yay!
+ * added a built in interface for cpdb.py, next step, externally specified
+   interfaces, and version 0.5, and the move to beta!
+
+vdb-0.4.2.tar.gz	2007-10-31
+ * introduced a third thread to force redraw the screen when debugged process
+   output stops for at least 200ms. This corrects the buffering delays
+   previously encountered when typing fast, and the 'missing last character'
+   bug...
+ * the until command now doesn't stop on the first line if the debugger hasn't
+   started already
+ * deleting watches now works
+
+vdb-0.4.1.tar.gz	2008-01-04
+ * various minor bug-fixes
+
+vdb-0.4.0.tar.gz	2007-10-31
+ * complete rewrite as proposed earlier, using threads to catch debugger and
+   target process output
+ * removed stack window entirely
+ * it works with gdb only at the moment
+
+vdb-0.3.2.tar.gz	2006-11-12
+ * multiple watch expressions can now be watched without going into error mode
+   lock.
+ * error mode no longer locks VDBStepOver or VDBStepInto
+ * errors caught within a try: except: block are cleared once entering the
+   except clause
+ * moving a watch up or down within the watch list isn't reset when watches are
+   updated anymore
+ * VDBStep* functions once again pause at the first line of executation when the
+   session starts, instead of immedaitely stepping onto/into the next line
+ * further expansion of the debugging log
+
+vdb-0.3.1.tar.gz	2006-11-12
+ * breakpoints move correctly when lines above the breakpoint are
+   removed/inserted
+ * notification of program termination, which keeps output, watch, console, and
+   stack windows visible, added
+ * debug log completely overhauled and extended, now contains a duplicate of
+   debug console output in easily extrctable manner
+ * added file auxtools/extractconsole.py, which is a small python script to
+   extract a verbatim copy of the debug session from a debug log file
+ * VDBUntil ow works over input requiring lines
+ * added VDBRefresh to handle vdb polling for output too quickly and going into 
+   input mode prematurely
+
+vdb-0.3.0.tar.gz  	2006-11-10
+ * made debug output more thorough, because it looks like I'm going to need it
+ * removed timed delays for everything except pty writes, which are minimal
+   anyway, and don't affect performance too much. Autostart commands are now done
+   using blocking mode pty reads, looks like it works for python
+ * ripped out all those hard coded python commands and replaced them with
+   iterface strings, hence the minor version bump ;)
+ * started on the gdb interface, but it still hangs vim on start and I don't know
+   why just yet
+ * added highlight and sign definitions in the vim section of the code, so they
+   are already defined when ToggleBreak is called before a debug session is
+   started. This gets rid of one of the many annoying vim.error messages
+
+vdb-0.2.2.tar.gz 	2006-11-09
+ * Added quick start guide, plus documented work around to the hang on start debug
+   session bug
+ * Cleaned up blurb.txt, and renamed it to README
+ * Documented the command names used, rather than just the default key maps
+ * Removed the line that performs the default mappings on source. Users can now
+   source the script and set up the maps separately, if they so choose, which
+   should make this script a lot more telnet friendly. Otherwise, just add an
+   autocommand to call VDBMapDefaults() to the users ~/.vimrc
+
+vdb-0.2.1.tar.gz	2006-11-07
+ * added an 'if' statement enclosing entire script to prevent multiple sourcing
+   wiping out current sessions
+ * added proper licensing info, i.e. the COPYING file containing the GPL 2 full
+   text
+
+vdb-0.2.tar.gz		2006-11-04
+ * Added commandline history to debugger console
+ * minor bug fixes, cleaned up code, and cleaned up blurb.txt
+
+vdb.tar.gz 		2006-11-03
+ * initial release
+
+--- Acknowledgements and Credits ---
+
+ - James Dominy (sirlark for those who know me on IRC), the primary author of
+   the plug in (actually, currently the only one)
+ 
+ - Andrew Dalke, for answering lots of tedious questions about python, and for
+   proposing the method of output separation used for the PDB interface
+ 
+ - Mitchell de Bruyn, for spans of initial help regarding bugfixes and bug
+   reporting, and all those late night IM sessions and remote debugging
+
+ - Bram Moolenar, and everyone else who helps to develop vim, thanks for such an
+   AWESOME piece of software, in a word, it ROCKS!
+ 
+ - #vim and everyone on it who has ever put up with more of those tedious
+   questions, generally of the nature "I'm trying to do this thing (which no
+   sane person would ever want to do in Vim) in vim and ...", you know who you
+   are, and once again, thanks, you've been invaluable! And I'm sorry for all
+   those times I bothered you when an extra 5 minutes of trawling through :help
+   would have answered the question anyway...
+ 
+ - #python and everyone on it who has similarly put up with persistent questions
+   about how to do things the 'bad' way, instead of simply using 'xyz' module...
+   I swear it's all because vim is picky, not out of personal choice ;)
+
+--- Bugs (Cause there are going to be many) ---
+ 
+ - report bugs to vimdebugger _at_ gmail _dot_ com
+   
+   - start the subject line with [BUG]
+   
+   - please try to reproduce the bug at least once with debug output turned on
+     (assuming it doesn't wipe your harddrive, and bring the internet down with
+     it ;), and attach the debug output in your email
+      - ':python VDBSetDebugFile()' will initiate capture for the rest of the
+	current debug session, and all further ones, as long as vim is running
+   
+   - please list the output of uname -a, and :ver from within Vim
+   
+   - if it's not too much trouble, and the files in question are not
+     particularly sensitive, send files being debugged, so that I can have a
+     look at how the bug came about in a environment as close to the original
+     one as possible... promise I won't rip your code off ... really!
+
+--- Comments, Feature Requests, Criticism, and Warm Fuzzy Things ---
+
+ - also send to vimdebugger _at_ gmail _dot_ com putting [COMMENT], [FEAT REQ],
+   [CRIT], or [WFT] at the beginning of the subject line as appropriate
